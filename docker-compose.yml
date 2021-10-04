@@ -1,0 +1,34 @@
+version: "3.6"
+services:
+  emma-db:
+    image: postgres:13
+    environment:
+      POSTGRES_PASSWORD: postgres
+    cpu_count: 4
+    mem_reservation: 16GB
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./my-postgres.conf:/etc/postgresql/postgresql.conf
+
+  emma-zookeeper:
+    image: wurstmeister/zookeeper:3.4.6
+    expose:
+      - "2181"
+
+  emma-kafka:
+    image: wurstmeister/kafka:2.11-1.1.1
+    ports:
+      - "9092:9092"
+    depends_on:
+      - emma-zookeeper
+    links:
+      - emma-zookeeper
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: ${HOST_IP}
+      KAFKA_ZOOKEEPER_CONNECT: emma-zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_CREATE_TOPICS: 'tracking.events'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
